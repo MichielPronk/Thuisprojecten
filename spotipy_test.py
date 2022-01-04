@@ -16,32 +16,31 @@ def connect_spotify(scope):
     return sp
 
 
+def get_images(url):
+    response = requests.get(url)
+    sizes = ['640x640', '64x64', '32x32']
+    for size in sizes:
+        im = Image.open(BytesIO(response.content))
+        height = int(size.split('x')[0])
+        im.thumbnail((height, height), Image.ANTIALIAS)
+        im.convert('RGB')
+        im.save(size+'.jpg')
+
+
 def main():
     scope = 'user-read-currently-playing'
     new_current = ''
-    new_timestamp = ''
     while True:
         current = connect_spotify(scope).current_user_playing_track()
         try:
-            if new_timestamp == current['progress_ms']:
+            if not current['is_playing']:
                 tekst = 'Paused - ' + current['item']['name'].split(' - ')[0] +\
                         ' - ' + current['item']['album']['artists'][0]['name']
             else:
                 tekst = current['item']['name'].split(' - ')[0] + ' - ' + current['item']['album']['artists'][0]['name']
-            new_timestamp = current['progress_ms']
             if current['item']['name'] != new_current:
-                url = current['item']['album']['images'][0]['url']
-                im = Image.open(requests.get(url, stream=True).raw)
-                im.save('test.jpg')
-                response = requests.get(url)
-                image = Image.open(BytesIO(response.content))
-                image2 = Image.open(BytesIO(response.content))
-                image.thumbnail((32, 32), Image.ANTIALIAS)
-                image2.thumbnail((64, 64), Image.ANTIALIAS)
-                image.convert('RGB')
-                image2.convert('RGB')
-                image.save('test2.jpg')
-                image2.save('test3.jpg')
+                print(current['item']['name'], new_current)
+                get_images(current['item']['album']['images'][0]['url'])
                 new_current = current['item']['name']
         except TypeError:
             new_current = 'empty'
